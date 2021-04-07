@@ -129,9 +129,6 @@ namespace BggBot2.Migrations
                     b.Property<string>("FeedUrl")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<bool>("HasError")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit");
 

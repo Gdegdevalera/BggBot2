@@ -7,6 +7,8 @@ namespace BggBot2
 {
     public static class Extensions
     {
+        public delegate void Logger(string value);
+
         public static string GetId(this ClaimsPrincipal user)
         {
             return user.Claims.Single(x => x.Type == ClaimTypes.NameIdentifier).Value;

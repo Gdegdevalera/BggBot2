@@ -17,13 +17,13 @@ namespace BggBot2.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RegistrationService _registrationService;
+        private readonly RegistrationCodeService _registrationService;
         private readonly ILogger<ExternalLoginModel> _logger;
 
         public ExternalLoginModel(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
-            RegistrationService registrationService,
+            RegistrationCodeService registrationService,
             ILogger<ExternalLoginModel> logger)
         {
             _signInManager = signInManager;

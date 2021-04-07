@@ -1,4 +1,5 @@
 using BggBot2.Data;
+using BggBot2.Infrastructure;
 using BggBot2.Models;
 using BggBot2.Services;
 using Hangfire;
@@ -20,7 +21,7 @@ using System.Threading;
 
 namespace BggBot2
 {
-    public class FeedSenderSettingsModel
+    public class SenderSettingsModel
     {
         public int BatchSize { get; set; }
     }
@@ -38,8 +39,8 @@ namespace BggBot2
         {
             var connectionString = Configuration.GetConnectionString("DefaultConnection");
 
-            var telegramSettings = new FeedSenderSettingsModel();
-            Configuration.GetSection("FeedSender").Bind(telegramSettings);
+            var telegramSettings = new SenderSettingsModel();
+            Configuration.GetSection("Sender").Bind(telegramSettings);
             services.AddSingleton(telegramSettings);
 
             services.AddDbContext<ApplicationDbContext>(options =>
@@ -118,11 +119,16 @@ namespace BggBot2
                 configuration.RootPath = "ClientApp/dist";
             });
 
-            services.AddScoped<RegistrationService>();
-            services.AddSingleton<IHangfireService, HangfireService>();
-            services.AddSingleton<ITelegramService, TelegramService>();
-            services.AddSingleton<FeedSender>();
-            services.AddTransient<SubscriptionService>();
+            // Infrastructure
+            services.AddSingleton<IReceiverJobScheduler, ReceiverJobScheduler>();
+            services.AddSingleton<IRssReader, RssReader>();
+            services.AddSingleton<ITelegramClient, TelegramClient>();
+
+            // Services
+            services.AddScoped<RegistrationCodeService>();
+            services.AddScoped<SenderService>();
+            services.AddScoped<ReceiverService>();
+            services.AddScoped<SubscriptionService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -152,8 +158,8 @@ namespace BggBot2
 
             //app.UseCors("CorsPolicy");
 
-            RecurringJob.AddOrUpdate<FeedSender>("sender",
-                s => s.SendPendingsAsync(null, CancellationToken.None), Cron.Minutely);
+            RecurringJob.AddOrUpdate<SenderJob>("sender",
+                s => s.Execute(CancellationToken.None), Cron.Minutely);
 
             app.UseRouting();
 

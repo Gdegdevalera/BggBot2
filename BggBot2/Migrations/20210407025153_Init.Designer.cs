@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BggBot2.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20210406094759_Init")]
+    [Migration("20210407025153_Init")]
     partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -130,9 +130,6 @@ namespace BggBot2.Migrations
 
                     b.Property<string>("FeedUrl")
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<bool>("HasError")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("bit");

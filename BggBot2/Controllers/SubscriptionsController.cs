@@ -1,4 +1,5 @@
 ﻿using BggBot2.Data;
+using BggBot2.Infrastructure;
 using BggBot2.Models.Api;
 using BggBot2.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -12,10 +13,12 @@ namespace BggBot2.Controllers
     public class SubscriptionsController : ControllerBase
     {
         private readonly SubscriptionService _subscriptionService;
+        private readonly IRssReader _rssReader;
 
-        public SubscriptionsController(SubscriptionService subscriptionService)
+        public SubscriptionsController(SubscriptionService subscriptionService, IRssReader rssReader)
         {
             _subscriptionService = subscriptionService;
+            _rssReader = rssReader;
         }
 
         [HttpGet]
@@ -42,7 +45,7 @@ namespace BggBot2.Controllers
             => _subscriptionService.Create(model, User.GetId());
 
         [HttpPost("test")]
-        public IEnumerable<FeedItem> Test(CreateSubscriptionModel model)
-            => _subscriptionService.Test(model);
+        public List<FeedItemDto> Test(CreateSubscriptionModel model)
+            => _rssReader.Read(model.FeedUrl);
     }
 }

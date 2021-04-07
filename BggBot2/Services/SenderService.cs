@@ -1,6 +1,5 @@
 ﻿using BggBot2.Data;
-using Hangfire.Server;
-using Microsoft.Extensions.DependencyInjection;
+using BggBot2.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,59 +8,55 @@ using System.Threading.Tasks;
 
 namespace BggBot2.Services
 {
-    public class FeedSender
+    public class SenderService
     {
         private readonly int _batchSize;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly ApplicationDbContext _database;
+        private readonly ITelegramClient _telegramClient;
 
-        public FeedSender(
-            FeedSenderSettingsModel settings,
-            IServiceProvider serviceProvider)
+        public SenderService(
+            SenderSettingsModel settings,
+            ApplicationDbContext database,
+            ITelegramClient telegram)
         {
+            if (settings.BatchSize <= 0)
+                throw new ArgumentException("SenderSettings.BatchSize must be greater than 0");
+
             _batchSize = settings.BatchSize;
-            _serviceProvider = serviceProvider;
+            _database = database;
+            _telegramClient = telegram;
         }
 
-        public async Task SendPendingsAsync(PerformContext performContext, CancellationToken cancellationToken)
+        public async Task SendPendingsAsync(CancellationToken cancellationToken)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var telegram = scope.ServiceProvider.GetRequiredService<ITelegramService>();
-
-            var chats = database.FeedItems
+            var chats = _database.FeedItems
                 .OrderByDescending(x => x.Id)
                 .Select(x => new FeedDto { Entity = x, ChatId = x.Subscription.ApplicationUser.TelegramChatId })
                 .Where(x => x.Entity.Status == FeedItemStatus.Pending)
-                .Take(500)
+                .Take(1000)
                 .AsEnumerable()
                 .GroupBy(x => x.ChatId);
 
             foreach (var chat in chats)
             {
-                await ProcessFeed(chat.Key, chat, database, telegram, cancellationToken);
+                await ProcessChat(chat.Key, chat, cancellationToken);
             }
         }
 
-        public async Task SendMoreItemsAsync(long chatId, CancellationToken cancellationToken)
+        public Task SendMoreItemsAsync(long chatId, CancellationToken cancellationToken)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var telegram = scope.ServiceProvider.GetRequiredService<ITelegramService>();
-
-            var chat = database.FeedItems
+            var chat = _database.FeedItems
                 .OrderByDescending(x => x.Id)
                 .Select(x => new FeedDto { Entity = x, ChatId = x.Subscription.ApplicationUser.TelegramChatId })
                 .Where(x => x.ChatId == chatId && x.Entity.Status == FeedItemStatus.OnDemand)
                 .ToList();
 
-            await ProcessFeed(chatId, chat, database, telegram, cancellationToken);
+            return ProcessChat(chatId, chat, cancellationToken);
         }
 
         public void ArchiveItems(long chatId)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var items = database.FeedItems
+            var items = _database.FeedItems
                     .Where(x => x.Subscription.ApplicationUser.TelegramChatId == chatId
                         && x.Status == FeedItemStatus.OnDemand);
 
@@ -70,14 +65,12 @@ namespace BggBot2.Services
                 item.Status = FeedItemStatus.Archived;
             }
 
-            database.SaveChanges();
+            _database.SaveChanges();
         }
 
-        private async Task ProcessFeed(
+        private async Task ProcessChat(
             long chatId,
             IEnumerable<FeedDto> chat,
-            ApplicationDbContext database,
-            ITelegramService telegram,
             CancellationToken cancellationToken)
         {
             var counter = _batchSize;
@@ -91,14 +84,14 @@ namespace BggBot2.Services
                     try
                     {
                         var text = item.Entity.Link ?? FormatText(item.Entity);
-                        await telegram.SendMessageAsync(item.ChatId, text);
+                        await _telegramClient.SendMessageAsync(item.ChatId, text);
 
                         item.Entity.Status = FeedItemStatus.Sent;
                         item.Entity.SentDate = DateTimeOffset.UtcNow;
                     }
                     catch (Exception ex)
                     {
-                        database.ItemErrors.Add(FormatError(item.Entity, ex));
+                        _database.ItemErrors.Add(FormatError(item.Entity, ex));
                         item.Entity.Status = FeedItemStatus.Error;
                     }
                 }
@@ -107,17 +100,17 @@ namespace BggBot2.Services
                     item.Entity.Status = FeedItemStatus.OnDemand;
                 }
 
-                database.SaveChanges();
+                _database.SaveChanges();
             }
 
-            var onDemandCount = database.FeedItems
+            var onDemandCount = _database.FeedItems
                 .Where(x => x.Subscription.ApplicationUser.TelegramChatId == chatId
                     && x.Status == FeedItemStatus.OnDemand)
                 .Count();
 
             if (onDemandCount > 0)
             {
-                await telegram.SendOnDemandCounterAsync(chatId, onDemandCount);
+                await _telegramClient.SendOnDemandCounterAsync(chatId, onDemandCount);
             }
         }
 

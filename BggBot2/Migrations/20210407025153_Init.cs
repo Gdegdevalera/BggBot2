@@ -233,8 +233,7 @@ namespace BggBot2.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ApplicationUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     FeedUrl = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    IsEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    HasError = table.Column<bool>(type: "bit", nullable: false)
+                    IsEnabled = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

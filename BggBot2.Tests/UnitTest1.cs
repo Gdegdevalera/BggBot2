@@ -13,12 +13,6 @@ namespace BggBot2.Tests
     public class UnitTest1
     {
         [TestMethod]
-        public void TestMethod1()
-        {
-            var feed = RssReader.Read("https://www.feedforall.com/sample.xml");
-        }
-
-        [TestMethod]
         public void TestTelegramUserSearch()
         {
             

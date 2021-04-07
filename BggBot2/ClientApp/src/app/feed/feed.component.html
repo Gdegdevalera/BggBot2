@@ -1,8 +1,8 @@
-<p *ngIf="!items"><em>Loading...</em></p>
+<h3 *ngIf="!items"><em>Loading...</em></h3>
 
-<p *ngIf="items === []">No items</p>
+<h3 *ngIf="items && items.length == 0">No items yet</h3>
 
-<div *ngIf="items"
+<div *ngIf="items && items.length > 0"
      infiniteScroll
      [infiniteScrollDistance]="2"
      [infiniteScrollThrottle]="50"

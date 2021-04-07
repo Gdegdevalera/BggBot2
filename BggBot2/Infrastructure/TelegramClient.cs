@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using BggBot2.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -10,27 +11,27 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace BggBot2.Services
+namespace BggBot2.Infrastructure
 {
-    public interface ITelegramService
+    public interface ITelegramClient
     {
         Task SendMessageAsync(long chatId, string text);
         Task SendOnDemandCounterAsync(long chatId, int onDemandCount);
     }
 
-    public class TelegramService : ITelegramService
+    public class TelegramClient : ITelegramClient
     {
         private readonly TelegramBotClient _telegramClient;
         private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<TelegramService> _logger;
+        private readonly ILogger<TelegramClient> _logger;
 
         const string SendMoreAction = "Send more";
         const string IgnoreAction = "Ignore";
 
-        public TelegramService(
+        public TelegramClient(
             IServiceProvider serviceProvider,
             IConfiguration configuration,
-            ILogger<TelegramService> logger)
+            ILogger<TelegramClient> logger)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -40,7 +41,7 @@ namespace BggBot2.Services
             _telegramClient.OnMessage += OnMessage;
         }
 
-        private async void OnMessage(object sender, MessageEventArgs e)
+        private void OnMessage(object sender, MessageEventArgs e)
         {
             var text = e.Message.Text;
             var chat = e.Message.Chat;
@@ -50,27 +51,27 @@ namespace BggBot2.Services
             if (text.ToLower() == "/start")
             {
                 using var scope = _serviceProvider.CreateScope();
-                var registrationService = scope.ServiceProvider.GetRequiredService<RegistrationService>();
+                var registrationService = scope.ServiceProvider.GetRequiredService<RegistrationCodeService>();
                 var code = registrationService.CreateCode(chat.Username, chat.Id, DateTimeOffset.UtcNow);
 
-                await SendMessageAsync(chat.Id, "Your registration code: " + code);
+                SendMessageAsync(chat.Id, "Your registration code: " + code).Wait();
 
                 _logger.LogDebug("Registration code has been sent to " + chat.Username);
             }
 
             if (text == SendMoreAction)
             {
-                var feedSender = _serviceProvider.GetRequiredService<FeedSender>();
-                await feedSender.SendMoreItemsAsync(chat.Id, CancellationToken.None); 
+                var feedSender = _serviceProvider.GetRequiredService<SenderService>();
+                feedSender.SendMoreItemsAsync(chat.Id, CancellationToken.None).Wait(); 
 
                 _logger.LogDebug("More feed items are marked as pending");
             }
 
             if (text == IgnoreAction)
             {
-                var feedSender = _serviceProvider.GetRequiredService<FeedSender>();
+                var feedSender = _serviceProvider.GetRequiredService<SenderService>();
                 feedSender.ArchiveItems(chat.Id);
-                await SendMessageAsync(chat.Id, "The items have been archived");
+                SendMessageAsync(chat.Id, "The items have been archived").Wait();
 
                 _logger.LogDebug("More feed items are marked as pending");
             }
@@ -101,7 +102,7 @@ namespace BggBot2.Services
                     resizeKeyboard: true, 
                     oneTimeKeyboard: true);
 
-                await _telegramClient.SendTextMessageAsync(chatId, 
+                await _telegramClient.SendTextMessageAsync(chatId,
                     $"You have {onDemandCount} items more", replyMarkup: rkm);
             }
             catch (ApiRequestException ex) when (ex.ErrorCode == 429) // Too many requests

@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace BggBot2.Services
 {
-    public class RegistrationService
+    public class RegistrationCodeService
     {
         private readonly ApplicationDbContext _database;
 
-        public RegistrationService(ApplicationDbContext database)
+        public RegistrationCodeService(ApplicationDbContext database)
         {
             _database = database;
         }

@@ -1,4 +1,5 @@
 ﻿using BggBot2.Data;
+using BggBot2.Infrastructure;
 using BggBot2.Models.Api;
 using System;
 using System.Collections.Generic;
@@ -9,12 +10,14 @@ namespace BggBot2.Services
     public class SubscriptionService
     {
         private readonly ApplicationDbContext _database;
-        private readonly IHangfireService _hangfireService;
+        private readonly IReceiverJobScheduler _receiver;
 
-        public SubscriptionService(ApplicationDbContext database, IHangfireService hangfireService)
+        public SubscriptionService(
+            ApplicationDbContext database, 
+            IReceiverJobScheduler receiver)
         {
             _database = database;
-            _hangfireService = hangfireService;
+            _receiver = receiver;
         }
 
         public IEnumerable<Subscription> GetSubscriptions(long? lastId = null)
@@ -72,39 +75,22 @@ namespace BggBot2.Services
 
             _database.Add(subscription);
             _database.SaveChanges();
-            _hangfireService.Start(subscription.Id);
+            _receiver.Start(subscription.Id);
             return subscription;
         }
 
         public Subscription Start(long id, string userId)
         {
             var newSub = Update(id, userId, x => x.IsEnabled = true);
-            _hangfireService.Start(id);
+            _receiver.Start(id);
             return newSub;
         }
 
         public Subscription Stop(long id, string userId)
         {
             var newSub = Update(id, userId, x => x.IsEnabled = false);
-            _hangfireService.Stop(id);
+            _receiver.Stop(id);
             return newSub;
-        }
-
-        public IEnumerable<FeedItem> Test(CreateSubscriptionModel model)
-        {
-            var feed = RssReader.Read(model.FeedUrl);
-
-            var items = feed.Items.Select(x => new FeedItem
-            {
-                Title = x.Title.Text,
-                Description = x.Summary.Text,
-                PublishDate = x.PublishDate,
-                Link = x.Links?.FirstOrDefault()?.Uri?.ToString(),
-            })
-            .OrderBy(x => x.PublishDate)
-            .ToList();
-
-            return items;
         }
 
         private Subscription Update(long id, string userId, Action<Subscription> update)
