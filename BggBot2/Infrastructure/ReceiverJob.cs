@@ -4,7 +4,6 @@ using Hangfire.Server;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace BggBot2.Infrastructure
 {

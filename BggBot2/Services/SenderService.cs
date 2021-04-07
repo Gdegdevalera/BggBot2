@@ -11,12 +11,12 @@ namespace BggBot2.Services
     public class SenderService
     {
         private readonly int _batchSize;
-        private readonly ApplicationDbContext _database;
+        private readonly IApplicationDbContext _database;
         private readonly ITelegramClient _telegramClient;
 
         public SenderService(
             SenderSettingsModel settings,
-            ApplicationDbContext database,
+            IApplicationDbContext database,
             ITelegramClient telegram)
         {
             if (settings.BatchSize <= 0)

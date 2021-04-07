@@ -6,9 +6,9 @@ namespace BggBot2.Services
 {
     public class RegistrationCodeService
     {
-        private readonly ApplicationDbContext _database;
+        private readonly IApplicationDbContext _database;
 
-        public RegistrationCodeService(ApplicationDbContext database)
+        public RegistrationCodeService(IApplicationDbContext database)
         {
             _database = database;
         }

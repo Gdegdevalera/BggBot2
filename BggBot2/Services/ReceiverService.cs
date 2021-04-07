@@ -8,10 +8,10 @@ namespace BggBot2.Services
 {
     public class ReceiverService
     {
-        private readonly ApplicationDbContext _database;
+        private readonly IApplicationDbContext _database;
         private readonly IRssReader _rssReader;
 
-        public ReceiverService(ApplicationDbContext database, IRssReader rssReader)
+        public ReceiverService(IApplicationDbContext database, IRssReader rssReader)
         {
             _database = database;
             _rssReader = rssReader;

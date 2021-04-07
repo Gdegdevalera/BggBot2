@@ -45,6 +45,7 @@ namespace BggBot2
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
+            services.AddScoped<IApplicationDbContext>(provider => provider.GetService<ApplicationDbContext>());
 
             services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -58,18 +59,27 @@ namespace BggBot2
             services.AddIdentityServer()
                 .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
 
-            services.AddAuthentication()
-                .AddGoogle(options =>
+            var auth = services.AddAuthentication();
+
+            if (Configuration["Authentication:Google:ClientId"] != null)
+            {
+                auth.AddGoogle(options =>
                 {
                     options.ClientId = Configuration["Authentication:Google:ClientId"];
                     options.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
-                })
-                .AddMicrosoftAccount(microsoftOptions =>
+                });
+            }
+
+            if (Configuration["Authentication:Microsoft:ClientId"] != null)
+            {
+                auth.AddMicrosoftAccount(microsoftOptions =>
                 {
                     microsoftOptions.ClientId = Configuration["Authentication:Microsoft:ClientId"];
                     microsoftOptions.ClientSecret = Configuration["Authentication:Microsoft:ClientSecret"];
-                })
-                .AddIdentityServerJwt();
+                });
+            }
+
+            auth.AddIdentityServerJwt();
 
             services.Configure<IdentityOptions>(options =>
                 {
@@ -148,7 +158,8 @@ namespace BggBot2
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseHangfireDashboard(options: new DashboardOptions { 
-                IsReadOnlyFunc = (DashboardContext context) => true
+                IsReadOnlyFunc = (DashboardContext context) => true,
+                DisplayStorageConnectionString = false
             });
 
             if (!env.IsDevelopment())

@@ -9,11 +9,11 @@ namespace BggBot2.Services
 {
     public class SubscriptionService
     {
-        private readonly ApplicationDbContext _database;
+        private readonly IApplicationDbContext _database;
         private readonly IReceiverJobScheduler _receiver;
 
         public SubscriptionService(
-            ApplicationDbContext database, 
+            IApplicationDbContext database, 
             IReceiverJobScheduler receiver)
         {
             _database = database;
@@ -73,7 +73,7 @@ namespace BggBot2.Services
                 IsEnabled = true
             };
 
-            _database.Add(subscription);
+            _database.Subscriptions.Add(subscription);
             _database.SaveChanges();
             _receiver.Start(subscription.Id);
             return subscription;
