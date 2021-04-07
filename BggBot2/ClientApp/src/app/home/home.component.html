@@ -1,0 +1,79 @@
+<div *ngIf="showForm; else listBlock">
+  <h3>Add subscription</h3>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <input type="text"
+             formControlName="feedUrl"
+             maxlength="2000"
+             class="form-control"
+             id="feedUrl"
+             placeholder="Enter feed URL">
+      <div *ngIf="feedUrl.touched && feedUrl.errors" class="text-danger">
+        Must be a valid URL
+      </div>
+    </div>
+    <button type='button'class="btn btn-success" (click)="onTest()" [disabled]="!form.touched || !form.valid">Test</button>
+    <button type='submit' class="btn btn-primary mx-2" [disabled]="!form.touched || !form.valid">Submit</button>
+    <button type='reset' class="btn btn-link" (click)="toggleForm()">Cancel</button>
+  </form>
+
+  <div class="spinner-border spinner-sending my-3" title="Sending..." *ngIf="testItemsLoading">
+    <span class="sr-only">Loading...</span>
+  </div>
+
+  <div *ngIf="testItems">
+    <div class="card my-3" *ngFor="let item of testItems">
+      <div class="card-body">
+        <div class="card-title">
+          <h5 class="d-inline">{{ item.title }}</h5>
+        </div>
+        <h6 class="card-subtitle mb-2 text-muted">{{ item.publishDate | date:'long' }}</h6>
+        <p class="card-text bottom-fade"
+           [innerHtml]="item.show ? item.description : ((item.description | slice:0:200).trim() + '...')"></p>
+        <a role="button" class="card-link" (click)="item.show = !item.show">
+          Show {{ item.show ? "less" : "more..." }}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #listBlock>
+  <div *ngIf="subscriptions; else loadingBlock">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">FeedUrl</th>
+          <th scope="col">Enabled</th>
+          <th scope="col">PendingCount</th>
+          <th scope="col">Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let subscription of subscriptions">
+          <th scope="row">{{ subscription.telegramUserName }}</th>
+          <td><a [routerLink]="['/feed', subscription.id]">{{ subscription.feedUrl }}</a></td>
+          <td>
+            <span *ngIf="subscription.isEnabled">
+              <button class="btn btn-primary" (click)="stop(subscription)">Stop</button>
+            </span>
+            <span *ngIf="!subscription.isEnabled">
+              <button class="btn btn-primary" (click)="start(subscription)">Start</button>
+            </span>
+          </td>
+          <td>{{ subscription.pendingCount }}</td>
+          <td>{{ subscription.hasError }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <button class="btn btn-success" (click)="toggleForm()">Add subscription</button>
+  </div>
+
+</ng-template>
+
+  <ng-template #loadingBlock>
+    <p><em>Loading...</em></p>
+  </ng-template>
+

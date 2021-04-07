@@ -1,0 +1,32 @@
+<p *ngIf="!items"><em>Loading...</em></p>
+
+<p *ngIf="items === []">No items</p>
+
+<div *ngIf="items"
+     infiniteScroll
+     [infiniteScrollDistance]="2"
+     [infiniteScrollThrottle]="50"
+     (scrolled)="onScroll()">
+  <div class="card my-2" *ngFor="let item of items">
+    <div class="card-body">
+
+      <div class="card-title">
+        <h5 class="d-inline">{{ item.title }}</h5>
+        <span class="float-right text-muted">Status: {{ allStatuses[item.status] }}</span>
+      </div>
+
+      <div class="card-subtitle mb-2">
+        <h6 class="text-muted">Published: {{ item.publishDate | date:'medium' }}</h6>
+        <h6 class="text-muted">Received: {{ item.receivedDate | date:'medium' }}</h6>
+        <h6 *ngIf="item.status == allStatuses.Sent" class="text-muted">Sent: {{ item.sentDate | date:'medium' }}</h6>
+      </div>
+
+      <p class="card-text bottom-fade"
+         [innerHtml]="item.show ? item.description : ((item.description | slice:0:200).trim() + '...')"></p>
+      <a role="button" class="card-link" (click)="item.show = !item.show">
+        Show {{ item.show ? "less" : "more..." }}
+      </a>
+
+    </div>
+  </div>
+</div>
