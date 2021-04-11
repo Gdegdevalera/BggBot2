@@ -5,6 +5,7 @@ export interface Subscription {
   isEnabled: boolean;
   pendingCount: number;
   hasError: boolean;
+  isReadOnly: boolean;
 }
 
 export interface FeedItem {

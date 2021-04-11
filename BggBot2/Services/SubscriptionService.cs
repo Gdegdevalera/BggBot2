@@ -11,16 +11,20 @@ namespace BggBot2.Services
     {
         private readonly IApplicationDbContext _database;
         private readonly IReceiverJobScheduler _receiver;
+        private readonly int _maxSubscriptionsCount;
 
         public SubscriptionService(
             IApplicationDbContext database, 
-            IReceiverJobScheduler receiver)
+            IReceiverJobScheduler receiver,
+            UserSettingsModel settings)
         {
             _database = database;
             _receiver = receiver;
+
+            _maxSubscriptionsCount = settings.MaxEnabledSubscriptonsCountPerUser;
         }
 
-        public IEnumerable<Subscription> GetSubscriptions(long? lastId = null)
+        public IEnumerable<Subscription> GetSubscriptions(long? lastId = null, string userId = null)
         {
             var subscriptions = _database.Subscriptions
                 .Where(x => lastId == null || x.Id < lastId)
@@ -50,6 +54,11 @@ namespace BggBot2.Services
                 {
                     subscription.FeedUrl = subscription.FeedUrl.Substring(0, 50) + "...";
                 }
+
+                if (subscription.ApplicationUserId == userId)
+                {
+                    subscription.IsReadOnly = false;
+                }
             }
 
             return subscriptions;
@@ -66,11 +75,18 @@ namespace BggBot2.Services
 
         public Subscription Create(CreateSubscriptionModel model, string userId)
         {
+            var existingSubscriptionsCount = _database.Subscriptions
+                .Count(x => x.ApplicationUserId == userId && x.IsEnabled);
+
+            if (existingSubscriptionsCount >= _maxSubscriptionsCount)
+                throw new TooManyExistingSubscriptionsException();
+
             var subscription = new Subscription
             {
                 FeedUrl = model.FeedUrl,
                 ApplicationUserId = userId,
-                IsEnabled = true
+                IsEnabled = true,
+                IsReadOnly = false
             };
 
             _database.Subscriptions.Add(subscription);
@@ -81,6 +97,12 @@ namespace BggBot2.Services
 
         public Subscription Start(long id, string userId)
         {
+            var existingSubscriptionsCount = _database.Subscriptions
+                .Count(x => x.ApplicationUserId == userId && x.IsEnabled);
+
+            if (existingSubscriptionsCount >= _maxSubscriptionsCount)
+                throw new TooManyExistingSubscriptionsException();
+
             var newSub = Update(id, userId, x => x.IsEnabled = true);
             _receiver.Start(id);
             return newSub;
@@ -96,11 +118,17 @@ namespace BggBot2.Services
         private Subscription Update(long id, string userId, Action<Subscription> update)
         {
             var subscription = _database.Subscriptions.FirstOrDefault(x => x.Id == id);
+
+            if (subscription.ApplicationUserId != userId)
+                throw new NotAllowedException();
+
             if (subscription == null)
                 throw new NotFoundException();
 
             update(subscription);
             _database.SaveChanges();
+
+            subscription.IsReadOnly = false;
             return subscription;
         }
     }

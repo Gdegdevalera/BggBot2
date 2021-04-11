@@ -8,6 +8,7 @@ using System.Collections.Generic;
 
 namespace BggBot2.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class SubscriptionsController : ControllerBase
@@ -21,25 +22,24 @@ namespace BggBot2.Controllers
             _rssReader = rssReader;
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public IEnumerable<Subscription> Get(long? lastId = null)
-            => _subscriptionService.GetSubscriptions(lastId);
+            => _subscriptionService.GetSubscriptions(lastId, User.GetId());
 
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public IEnumerable<FeedItem> Get(long id, long? lastId = null) 
             => _subscriptionService.GetFeedItems(id, lastId);
 
-        [Authorize]
         [HttpPut("{id}/stop")]
         public Subscription Stop(long id) 
             => _subscriptionService.Stop(id, User.GetId());
 
-        [Authorize]
         [HttpPut("{id}/start")]
         public Subscription Start(long id)
             => _subscriptionService.Start(id, User.GetId());
 
-        [Authorize]
         [HttpPost]
         public Subscription Create(CreateSubscriptionModel model) 
             => _subscriptionService.Create(model, User.GetId());

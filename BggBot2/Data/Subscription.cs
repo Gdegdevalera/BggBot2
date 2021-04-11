@@ -26,5 +26,8 @@ namespace BggBot2.Data
 
         [NotMapped]
         public bool HasError { get; set; }
+
+        [NotMapped]
+        public bool IsReadOnly { get; set; } = true;
     }
 }

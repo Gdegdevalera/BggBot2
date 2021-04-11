@@ -11,7 +11,7 @@ namespace BggBot2
 
         public static string GetId(this ClaimsPrincipal user)
         {
-            return user.Claims.Single(x => x.Type == ClaimTypes.NameIdentifier).Value;
+            return user?.Claims?.SingleOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
         }
 
         public static TV SafeGetValue<TK, TV>(this IDictionary<TK, TV> source, TK key)
@@ -21,4 +21,6 @@ namespace BggBot2
     }
 
     public class NotFoundException : Exception { }
+    public class NotAllowedException : Exception { }
+    public class TooManyExistingSubscriptionsException : Exception { }
 }

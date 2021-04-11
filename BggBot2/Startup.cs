@@ -21,10 +21,6 @@ using System.Threading;
 
 namespace BggBot2
 {
-    public class SenderSettingsModel
-    {
-        public int BatchSize { get; set; }
-    }
 
     public class Startup
     {
@@ -39,9 +35,13 @@ namespace BggBot2
         {
             var connectionString = Configuration.GetConnectionString("DefaultConnection");
 
-            var telegramSettings = new SenderSettingsModel();
-            Configuration.GetSection("Sender").Bind(telegramSettings);
-            services.AddSingleton(telegramSettings);
+            var senderSettings = new SenderSettingsModel();
+            Configuration.GetSection("Sender").Bind(senderSettings);
+            services.AddSingleton(senderSettings);
+
+            var userSettings = new UserSettingsModel();
+            Configuration.GetSection("User").Bind(userSettings);
+            services.AddSingleton(userSettings);
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));

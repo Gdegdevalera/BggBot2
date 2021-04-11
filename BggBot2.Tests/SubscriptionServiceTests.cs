@@ -1,5 +1,4 @@
-﻿using AutoFixture;
-using BggBot2.Data;
+﻿using BggBot2.Data;
 using BggBot2.Infrastructure;
 using BggBot2.Models.Api;
 using BggBot2.Services;
@@ -7,11 +6,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BggBot2.Tests
 {
@@ -21,6 +16,7 @@ namespace BggBot2.Tests
         // Two separated contexts for SaveChanges() call validation
         TestDbContext db = TestDbContext.CreateInMemory();
         TestDbContext serviceContext = TestDbContext.CreateInMemory();
+        UserSettingsModel settings = new UserSettingsModel { MaxEnabledSubscriptonsCountPerUser = 2 };
 
         IReceiverJobScheduler scheduler = Substitute.For<IReceiverJobScheduler>();
 
@@ -28,7 +24,7 @@ namespace BggBot2.Tests
         public void When_subsctiption_created_scheduler_should_be_called()
         {
             // act 
-            var service = new SubscriptionService(serviceContext, scheduler);
+            var service = new SubscriptionService(serviceContext, scheduler, settings);
             var subs = service.Create(new CreateSubscriptionModel(), default);
 
             // assert
@@ -46,7 +42,7 @@ namespace BggBot2.Tests
             db.SaveChanges();
 
             // act 
-            var service = new SubscriptionService(serviceContext, scheduler);
+            var service = new SubscriptionService(serviceContext, scheduler, settings);
             service.Start(subscription.Id, default);
 
             // assert
@@ -64,7 +60,7 @@ namespace BggBot2.Tests
             db.SaveChanges();
 
             // act 
-            var service = new SubscriptionService(serviceContext, scheduler);
+            var service = new SubscriptionService(serviceContext, scheduler, settings);
             service.Stop(subscription.Id, default);
 
             // assert

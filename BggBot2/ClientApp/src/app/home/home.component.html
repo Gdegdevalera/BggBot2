@@ -56,10 +56,14 @@
           <td><a [routerLink]="['/feed', subscription.id]">{{ subscription.feedUrl }}</a></td>
           <td>
             <span *ngIf="subscription.isEnabled">
-              <button class="btn btn-primary" (click)="stop(subscription)">Stop</button>
+              <button class="btn btn-primary"
+                      (click)="stop(subscription)"
+                      [disabled]="subscription.isReadOnly">Stop</button>
             </span>
             <span *ngIf="!subscription.isEnabled">
-              <button class="btn btn-primary" (click)="start(subscription)">Start</button>
+              <button class="btn btn-primary"
+                      (click)="start(subscription)"
+                      [disabled]="subscription.isReadOnly">Start</button>
             </span>
           </td>
           <td>{{ subscription.pendingCount }}</td>
@@ -68,7 +72,7 @@
       </tbody>
     </table>
 
-    <button class="btn btn-success" (click)="toggleForm()">Add subscription</button>
+    <button class="btn btn-success" (click)="toggleForm()" [disabled]="!userLoggedIn">Add subscription</button>
   </div>
 
 </ng-template>

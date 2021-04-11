@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
+import { AuthorizeService } from '../../api-authorization/authorize.service';
 import { FeedItem, Subscription } from '../app.models';
 import { ApiService } from '../services/api.service';
 
@@ -12,6 +13,7 @@ export class HomeComponent {
   private readonly reg = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#%[\]@!\$&'\(\)\*\+,;=.]+$/;
 
   public subscriptions: Subscription[];
+  public userLoggedIn: boolean;
   public showForm: boolean;
   public form = this.formBuilder.group({
     feedUrl: ['', [Validators.required, Validators.pattern(this.reg)]]
@@ -21,11 +23,16 @@ export class HomeComponent {
 
   constructor(
     private api: ApiService,
-    private formBuilder: FormBuilder
+    private formBuilder: FormBuilder,
+    private authorize: AuthorizeService
   ) {
     api.getSubscriptions().subscribe(result => {
           this.subscriptions = result;
-    }, error => console.error(error));
+    });
+
+    authorize.isAuthenticated().subscribe(result => {
+      this.userLoggedIn = result;
+    });
   }
 
   get feedUrl() {
@@ -41,7 +48,7 @@ export class HomeComponent {
       .subscribe(result => {
         const ind = this.subscriptions.indexOf(subscription);
         this.subscriptions[ind] = result;
-      }, error => console.error(error));
+      });
   }
 
   public start(subscription: Subscription) {
@@ -49,7 +56,7 @@ export class HomeComponent {
       .subscribe(result => {
         const ind = this.subscriptions.indexOf(subscription);
         this.subscriptions[ind] = result;
-      }, error => console.error(error));
+      });
   }
 
   public onSubmit() {
@@ -57,7 +64,7 @@ export class HomeComponent {
         .subscribe(result => {
           this.subscriptions.push(result);
           this.showForm = false;
-        }, error => console.error(error));
+        });
   }
 
   public onTest() {
@@ -66,6 +73,6 @@ export class HomeComponent {
     this.api.testSubscription(this.form.value)
       .subscribe(result => {
         this.testItems = result;
-      }, error => console.error(error), () => this.testItemsLoading = false);
+      }, () => this.testItemsLoading = false);
   }
 }
