@@ -1,4 +1,5 @@
 ﻿using BggBot2.Data;
+using BggBot2.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BggBot2.Tests
@@ -8,6 +9,8 @@ namespace BggBot2.Tests
         public TestDbContext(DbContextOptions options) : base(options)
         {
         }
+
+        public DbSet<ApplicationUser> Users { get; set; }
 
         public DbSet<Subscription> Subscriptions { get; set; }
 
