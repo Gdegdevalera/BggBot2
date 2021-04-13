@@ -8,6 +8,8 @@ namespace BggBot2.Data
 {
     public interface IApplicationDbContext
     {
+        DbSet<ApplicationUser> Users { get; }
+
         DbSet<Subscription> Subscriptions { get; }
 
         DbSet<FeedItem> FeedItems { get; }

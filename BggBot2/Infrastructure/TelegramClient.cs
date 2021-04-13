@@ -54,9 +54,29 @@ namespace BggBot2.Infrastructure
                 var registrationService = scope.ServiceProvider.GetRequiredService<RegistrationCodeService>();
                 var code = registrationService.CreateCode(chat.Username, chat.Id, DateTimeOffset.UtcNow);
 
-                SendMessageAsync(chat.Id, "Your registration code: " + code).Wait();
+                if (code != null)
+                {
+                    SendMessageAsync(chat.Id, "Your registration code: " + code).Wait();
+                }
+                else
+                {
+                    var feedSender = _serviceProvider.GetRequiredService<SubscriptionService>();
+                    feedSender.StartAll(chat.Id);
+
+                    SendMessageAsync(chat.Id, "Resumed").Wait();
+                }
 
                 _logger.LogDebug("Registration code has been sent to " + chat.Username);
+            }
+
+            if (text.ToLower() == "/stop")
+            {
+                var feedSender = _serviceProvider.GetRequiredService<SubscriptionService>();
+                feedSender.StopAll(chat.Id);
+
+                SendMessageAsync(chat.Id, "Stopped").Wait();
+
+                _logger.LogDebug("Sending stopped with Telegram command");
             }
 
             if (text == SendMoreAction)

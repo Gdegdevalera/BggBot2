@@ -29,6 +29,9 @@ namespace BggBot2.Services
 
         public string CreateCode(string userName, long userId, DateTimeOffset now)
         {
+            if (_database.Users.Any(x => x.TelegramChatId == userId))
+                return null;
+
             var code = GenerateUniqueCode(userName, userId, now);
             _database.RegistrationCodes.Add(new RegistrationCode
             {

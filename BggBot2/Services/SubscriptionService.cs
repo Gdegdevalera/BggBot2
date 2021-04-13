@@ -108,6 +108,26 @@ namespace BggBot2.Services
             return newSub;
         }
 
+        public void StopAll(long chatId)
+        {
+            var subscriptions = _database.Subscriptions
+                .Where(x => x.ApplicationUser.TelegramChatId == chatId)
+                .ToList();
+
+            subscriptions.ForEach(x => x.IsEnabled = false);
+            _database.SaveChanges();
+        }
+
+        public void StartAll(long chatId)
+        {
+            var subscriptions = _database.Subscriptions
+                .Where(x => x.ApplicationUser.TelegramChatId == chatId)
+                .ToList();
+
+            subscriptions.ForEach(x => x.IsEnabled = true);
+            _database.SaveChanges();
+        }
+
         public Subscription Stop(long id, string userId)
         {
             var newSub = Update(id, userId, x => x.IsEnabled = false);
